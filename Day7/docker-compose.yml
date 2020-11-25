@@ -1,0 +1,23 @@
+---
+version: '3'
+services:
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile_build
+    container_name: Build
+    volumes:
+      - compiledapp:/home/app
+......
+  production:
+    build:
+      context: .
+      dockerfile: Dockerfile_prod
+    container_name: Production
+    ports:
+      - "80:8080"
+    volumes:
+      - compiledapp:/usr/local/tomcat/webapps/
+
+volumes:
+   compiledapp:
