@@ -1,0 +1,56 @@
+
+---
+- name: prepare software build
+  hosts: build
+  become: yes
+
+  tasks:
+  - name: Check installed or not JDK
+    apt:
+     name: default-jdk
+     state: present
+  - name: Check installed or not Maven
+    apt:
+     name: maven
+     state: present
+  - name: Check installed or not Git
+    apt:
+     name: git
+     state: present
+  - name: Copy application sources from Github
+    git:
+     repo: 'https://github.com/boxfuse/boxfuse-sample-java-war-hello'
+     dest: /home/project
+     clone: yes
+     update: yes
+  - name: Build application
+    shell: mvn package
+    args:
+      chdir: /home/project
+  - name: Copy project to master node
+    synchronize:
+     mode: pull
+     src: /home/project/target/hello-1.0.war
+     dest: /home/ubuntu
+
+- name: Prepare production
+  hosts: production
+  become: yes
+
+  tasks:
+  - name: Check installed or not JDK
+    apt:
+     name: default-jdk
+     state: present
+  - name: Check installed or not Tomcat
+    apt:
+     name: tomcat9
+     state: present
+  - name: Check service Tomcat is running
+    service:
+     name: tomcat9
+     state: started
+  - name: Copy application from master host to production host
+    synchronize:
+     src: /home/ubuntu/hello-1.0.war
+     dest: /var/lib/tomcat9/webapps/ROOT.war
