@@ -111,3 +111,5 @@
       image: production:latest
       name: prodcontainer
       state: started
+      ports:
+          - "8080:8080"
