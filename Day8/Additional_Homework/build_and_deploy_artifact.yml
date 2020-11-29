@@ -1,0 +1,113 @@
+
+---
+- name: prepare software build
+  hosts: build
+  become: yes
+
+  tasks:
+  - name: Install software
+    apt: name={{ item }}
+    state: present
+    with_items:
+      - python
+      - python-pip
+      - docker.io
+      - git
+......
+  - name: Install components for working with docker
+    pip: name={{ item }}
+    state: present
+    with_items:
+      - docker-py
+......
+  - name: Copy Dockerfil  from Github
+    git:
+     repo: 'https://github.com/er1in1/DevOps_School.git'
+     dest: /home/project
+     clone: yes
+     update: yes
+     
+  - name: Add data for this repository ( username and email for github)
+    shell: git config user.name "Er1in1" && git config user.email "Er1in1@mail.ru"
+    args:
+      chdir: /home/project/
+.....
+  - name: Build Docker (build) image from Dockerfile
+    docker_image:
+      name: build
+      path: /home/project/Day8/Additional_Homework/
+      dockerfile: Dockerfile_build
+      state: build
+......
+  - name: Running the container
+    docker_container:
+      image: build:latest
+      name: buildcontainer
+      state: started
+......
+  - name: Copy artifact from container to Git folder
+    shell: docker cp buildcontainer://boxfuse-sample-java-war-hello/target/hello-1.0.war /home/project/Day8/Additional_Homework/
+    
+  - name: Push artifact to Github(Need add idrsa_pub to github repository)
+    shell: git add . && git commit -m "Added artifac to Github" && git push origin master
+    args:
+      chdir: /home/project/
+....
+  - name: Stop the container
+    docker_container:
+      image: build:latest
+      name: buildcontainer
+      state: stopped
+......
+  - name: Delete the container
+    docker_container:
+      image: build:latest
+      name: buildcontainer
+      state: absent
+......
+  - name: Build Docker (build) image from Dockerfile
+    docker_image:
+      name: build
+      dockerfile: Dockerfile_build
+      path: /home/project/Day8/Additional_Homework/
+      state: absent
+
+- name: Prepare production
+  hosts: production
+  become: yes
+
+  tasks:
+  - name: Install software
+    apt: name={{ item }}
+    state: present
+    with_items:
+      - python
+      - python-pip
+      - docker.io
+      - git
+......
+  - name: Install components for working with docker
+    pip: name={{ item }}
+    state: present
+    with_items:
+      - docker-py
+......
+  - name: Copy Dockerfil  from Github
+    git:
+     repo: 'https://github.com/er1in1/DevOps_School.git'
+     dest: /home/project
+     clone: yes
+     update: yes
+     
+  - name: Build Docker (production) image from Dockerfile
+    docker_image:
+      name: production
+      path: /home/project/Day8/Additional_Homework/
+      dockerfile: Dockerfile_prod
+      state: build
+      
+  - name: Running the container
+    docker_container:
+      image: production:latest
+      name: prodcontainer
+      state: started
