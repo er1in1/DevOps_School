@@ -1,0 +1,60 @@
+
+  - name: Install components for working with docker
+    pip: name={{ item }}
+    state: present
+    with_items:
+      - docker-py
+
+  - name: Copy Dockerfile  from Github
+    git:
+     repo: 'https://github.com/er1in1/DevOps_School.git'
+     dest: /home/project
+     clone: yes
+     update: yes
+
+  - name: Build Docker (build) image from Dockerfile
+    docker_image:
+      name: build
+      path: /home/project/Day8/Additional_Homework/
+      dockerfile: Dockerfile_build
+      state: build
+
+  - name: Log into DockerHub
+    docker_login:
+      username: BlaBlaBla
+      password: 1234567890
+      email: BlaBlaBla@BlaBlaBla.com
+
+  - name: Tag and push to docker hub
+    docker_image:
+      name: build
+      repository: er1in1/images
+      tag: latest
+      push: yes
+
+
+- name: Prepare production
+  hosts: production
+  become: yes
+
+  tasks:
+  - name: Install software
+    apt: name={{ item }}
+    state: present
+    with_items:
+      - python
+      - python-pip
+      - docker.io
+      - git
+
+  - name: Install components for working with docker
+    pip: name={{ item }}
+    state: present
+    with_items:
+      - docker-py
+
+  - name: pull and run container
+    docker_container:
+     name: production
+     state: started
+     image: er1in1/images:latest
