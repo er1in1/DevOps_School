@@ -1,0 +1,36 @@
+pipeline {
+    environment {
+        registry = "er1in1/images"
+        registryCredential = 'dockerhub'
+        dockerImage = ''
+    }
+    agent any
+    stages {
+        stage('Clone Git with dockerfile') {
+            steps {
+                git 'https://github.com/er1in1/DevOps_School.git'
+            }
+        }
+        stage('Build image') {
+            steps {
+                script {
+                    dockerImage = docker.build("er1in1/images:build_image", "./Day11/Build_image")
+                }
+            }
+        }
+        stage('Push build image') {
+            steps {
+                script {
+                    docker.withRegistry( '', registryCredential ) {
+                        dockerImage.push()
+                    }
+                }
+            }
+        }
+        stage('Remove garbage') {
+            steps {
+                sh "docker rmi er1in1/images:build_image"
+            }
+        }
+    }
+}
