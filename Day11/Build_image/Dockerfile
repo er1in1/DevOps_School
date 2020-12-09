@@ -2,4 +2,4 @@ FROM jenkins/inbound-agent
 USER root
 RUN apt-get update && apt-get install maven -y
 RUN apt-get -y install docker.io
-RUN sudo usermod -a -G docker Jenkins
+RUN gpasswd -a jenkins docker
