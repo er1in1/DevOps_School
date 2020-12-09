@@ -1,4 +1,4 @@
 FROM jenkins/inbound-agent
 USER root
-RUN apt-get update
+RUN apt-get update && apt-get install mvn git -y
 RUN apt-get -y install docker.io
