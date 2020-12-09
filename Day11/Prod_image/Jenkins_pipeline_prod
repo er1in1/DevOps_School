@@ -1,0 +1,46 @@
+pipeline {
+        environment {
+        registry = "er1in1/images"
+        registryCredential = 'dockerhub'
+        dockerImage = ''
+    }
+    agent {
+        docker {
+            image 'er1in1/images:build_image'
+            args ' -v /var/run/docker.sock:/var/run/docker.sock'
+        }
+    }
+    stages {
+        stage('Clone Application') {
+            steps {
+                git 'https://github.com/boxfuse/boxfuse-sample-java-war-hello'
+            }
+        }
+        stage('Maven build') {
+            steps {
+                sh 'mvn package'
+            }
+        }
+        stage('Clone Repository with Dockerfile prod image') {
+            steps {
+                git 'https://github.com/er1in1/DevOps_School.git'
+            }
+        }
+        stage('Build production image') {
+            steps {
+                script {
+                    dockerImage = docker.build("er1in1/images:prod_image", "./Day11/Prod_image")
+                }
+            }
+        }
+        stage('Push Prod image') {
+            steps {
+                script {
+                    docker.withRegistry( '', registryCredential ) {
+                        dockerImage.push()
+                    }
+                }
+            }
+        }
+    }
+}
