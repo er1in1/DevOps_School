@@ -1,0 +1,74 @@
+---
+- hosts: localhost
+  gather_facts: true
+  vars_files:
+    - vars.yml
+  
+  tasks:
+  - name: Create security group
+    ec2_group:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      state: present
+      name: "day13_Security_Group"
+      description: "day13 security group"
+      region: "{{ region }}"
+      rules:
+        - proto: tcp  # ssh
+          from_port: 22
+          to_port: 22
+          cidr_ip: 0.0.0.0/0
+        - proto: tcp  # http
+          from_port: 80
+          to_port: 80
+          cidr_ip: 0.0.0.0/0
+        - proto: tcp  # http
+          from_port: 8080
+          to_port: 8080
+          cidr_ip: 0.0.0.0/0	
+        - proto: tcp  # https
+          from_port: 443
+          to_port: 443
+          cidr_ip: 0.0.0.0/0
+      rules_egress:
+        - proto: all
+          cidr_ip: 0.0.0.0/0
+    register: firewall_sg
+
+  - name: Create EC2 Build instance
+    ec2:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      state: present
+      key_name: "DevOps school"
+      region: "{{ region }}"
+      group_id: "{{ firewall_sg.group_id }}"
+      instance_type: "{{ instance_type }}"
+      image: "{{ Ubuntu1804 }}"
+      wait: yes
+      instance_tags:
+          Name: "d13_Build"
+      count_tag: Name
+      count: 1
+      vpc_subnet_id: "{{ vpc_subnet_id }}"
+      assign_public_ip: yes
+    register: ec2_Build
+    
+  - name: Create EC2 Prod instance
+    ec2:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      key_name: "DevOps school"
+      region: "{{ region }}"
+      group_id: "{{ firewall_sg.group_id }}"
+      instance_type: "{{ instance_type }}"
+      image: "{{ Ubuntu1804 }}"
+      wait: yes
+      instance_tags:
+          Name: "d13_Prod"
+      count_tag: Name
+      count: 1
+      vpc_subnet_id: "{{ vpc_subnet_id }}"
+      state: present
+      assign_public_ip: yes
+    register: ec2_Prod
