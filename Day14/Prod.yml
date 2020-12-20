@@ -1,0 +1,50 @@
+---
+- name: prepare software build
+  hosts: tag_Name_d14_2
+  become: yes
+  remote_user: ubuntu
+  gather_facts: yes
+  vars_files:
+    - vars.yml
+
+  tasks:
+  - name: Apt update
+    shell: apt update
+  - name: Check installed or not JDK
+    apt:
+     name: default-jdk
+     state: present
+  - name: Check installed or not Tomcat
+    apt:
+     name: tomcat9
+     state: present
+  - name: Check service Tomcat is running
+    service:
+     name: tomcat9
+     state: started
+  - name: Check installed or not Pip3
+    apt:
+     name: python3-pip
+     state: present
+  - name: Check installed or not Botocore
+    pip:
+     name: botocore
+     state: present
+  - name: Check installed or not Boto3
+    pip:
+     name: boto3
+     state: present
+  - name: Get artifact from bucket
+    amazon.aws.aws_s3:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      bucket: er1in1bucket
+      object: /hello-1.0.war
+      dest: /var/lib/tomcat9/webapps/hello-1.0.war
+      mode: get
+  - name: Delete a bucket and all contents
+    amazon.aws.aws_s3:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      bucket: er1in1bucket
+      mode: delete

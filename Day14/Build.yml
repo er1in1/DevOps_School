@@ -1,0 +1,61 @@
+---
+- name: prepare software build
+  hosts: tag_Name_d14_1
+  become: yes
+  remote_user: ubuntu
+  gather_facts: yes
+  vars_files:
+    - vars.yml
+
+  tasks:
+  - name: Apt update
+    shell: apt update
+  - name: Check installed or not JDK
+    apt:
+     name: default-jdk
+     state: present
+  - name: Check installed or not Maven
+    apt:
+     name: maven
+     state: present
+  - name: Check installed or not Git
+    apt:
+     name: git
+     state: present
+  - name: Check installed or not Pip3
+    apt:
+     name: python3-pip
+     state: present
+  - name: Check installed or not Botocore
+    pip:
+     name: botocore
+     state: present
+  - name: Check installed or not Boto3
+    pip:
+     name: boto3
+     state: present
+  - name: Copy application sources from Github
+    git:
+     repo: 'https://github.com/boxfuse/boxfuse-sample-java-war-hello'
+     dest: /home/project
+     clone: yes
+     update: yes
+  - name: Build application
+    shell: mvn package
+    args:
+      chdir: /home/project
+  - name: Create an empty bucket
+    amazon.aws.aws_s3:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      bucket: er1in1bucket
+      mode: create
+      permission: public-read
+  - name: put artifact to bucket
+    amazon.aws.aws_s3:
+      aws_access_key: "{{ aws_access_key }}"
+      aws_secret_key: "{{ aws_secret_key }}"
+      bucket: er1in1bucket
+      object: /hello-1.0.war
+      src: /home/project/target/hello-1.0.war
+      mode: put
